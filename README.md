@@ -14,7 +14,7 @@ This repository provides a **real-time CSI sensing system** that processes Wi-Fi
 - 📊 Interactive PyQt5 GUI with real-time CSI heatmaps and multi-label outputs
 - 🧼 Denoising pipeline using **Butterworth filtering**
 - 🧮 Plug-and-play with **CNN or Transformer-based models**
-- 📡 MQTT-based real-time CSI ingestion from ESP devices
+- 📡 MQTT-based real-time CSI ingestion from **ESP32-S3 devices**
 - 💾 Automatic timestamped data logging
 
 ---
