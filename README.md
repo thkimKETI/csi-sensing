@@ -93,10 +93,26 @@ Use of this code—commercial or non-commercial, including academic research, mo
 
 ---
 
-## 🙏 Acknowledgments
+## 📄 Publications
+
+This project is supported by a series of research efforts. Related publications include:
+
+1. **Taehyun Kim**, et al.  
+   _Wifi Channel State Information Sensing based on Introspective Metric Learning_  
+   *International Conference on Signal Processing and Information Security*, IEEE, 2024
+   [🔗 Link](https://ieeexplore.ieee.org/abstract/document/10812595)
+
+2. **Taehyun Kim**, et al.  
+   _WiFi's Unspoken Tales: Deep Neural Network Decodes Human Behavior from Channel State Information_  
+   *International Conference on Big Data Computing, Applications and Technologies*, IEEE/ACM, 2023
+   [🔗 Link]([https://ieeexplore.ieee.org/abstract/document/1081259](https://dl.acm.org/doi/abs/10.1145/3632366.3632374)
+
+3. **Taehyun Kim**, et al.  
+   _Neural Represenation Learning for WiFi Channel State Information: A Unified Model for Action and Location Recognition_  
+   *To be submitted*, IEEE Access, 2025.
 
 ---
 
 ## 🙏 Acknowledgments
 
-This research was financially supported by the Ministry of Trade, Industry and Energy (MOTIE) and the Korea Institute of Advancement of Technology (KIAT) through the International Cooperative R&D Program [P0019782, Embedded AI Based Fully Autonomous Driving Software and MaaS Technology Development].
+This work was supported by the Technology Innovation Program [20026230, Development of AIoT device utilizing Channel State information(CSI) for a AI-based lifestyle recognition] funded by the Ministry of Trade, Industry & Energy(MOTIE) and Korea Evaluation Institute of Industrial Technology(KEIT).
