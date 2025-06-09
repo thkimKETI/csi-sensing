@@ -35,23 +35,16 @@ pip install -r requirements.txt
 ## 🔗 Pretrained Weights
 
 📦 Download pretrained models and place them under `csi/weight/esp01_weight/`
-
-> 🧪 The currently released models are trained using CSI data from **2 ESP32-S3 devices**.  
-> Models for 1 and 4 devices will be released later.
+> 📁 If the folders do not exist, please create them manually.
 
 | Number of Devices | Location Model | Activity Model |
 |-------------------|----------------|----------------|
 | 1 Device          | TBD            | TBD            |
 | 2 Devices         | [✅ Download](https://drive.google.com/file/d/1t1Di4KkHQOpncNmZmSdYPAN-0ZtC8Yqc/view?usp=sharing) | [✅ Download](https://drive.google.com/file/d/1reTq928hYPGpaUEugrAVeZoKxW_10U28/view?usp=sharing) |
 | 4 Devices         | TBD            | TBD            |
+> 🧪 The currently released models are trained using CSI data from **2 ESP32-S3 devices**.  
+> ⏳ Models for 1 and 4 devices will be released later.
 
-
-> 📁 If the folders do not exist, please create them manually.
-csi/
-└── weight/
-    └── esp01_weight/
-        ├── loc.pt
-        └── act.pt
 
 ---
 
