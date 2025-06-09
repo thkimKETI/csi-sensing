@@ -28,25 +28,12 @@ pip install -r requirements.txt
 
 ---
 
-## 🔗 Download Pretrained Weights
+## 🔗 Pretrained Weights
 
-Download the pretrained models for **location** and **activity recognition** from Google Drive:
+📦 Download `loc.pt` and `act.pt` to `csi/weight/esp01_weight/`
 
-| Model Type     | Path                                 | Download Link |
-|----------------|--------------------------------------|----------------|
-| Location Model | `csi/weight/esp01_weight/loc.pt`     | [📥 Download](https://drive.google.com/file/d/1t1Di4KkHQOpncNmZmSdYPAN-0ZtC8Yqc/view?usp=sharing) |
-| Activity Model | `csi/weight/esp01_weight/act.pt`     | [📥 Download](https://drive.google.com/file/d/1reTq928hYPGpaUEugrAVeZoKxW_10U28/view?usp=sharing) |
-
-> After downloading, place them in the following directory structure:
->
-> ```bash
-> csi/
-> └── weight/
->     └── esp01_weight/
->         ├── loc.pt
->         └── act.pt
-> ```
-
+- [Location](https://drive.google.com/file/d/1t1Di4KkHQOpncNmZmSdYPAN-0ZtC8Yqc/view?usp=sharing)
+- [Activity](https://drive.google.com/file/d/1reTq928hYPGpaUEugrAVeZoKxW_10U28/view?usp=sharing)
 If the folders do not exist, create them manually.
 
 ---
