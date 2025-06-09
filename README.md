@@ -63,14 +63,6 @@ Arguments:
 
 ---
 
-## 📌 Notes
-
-- Supports 4 ESP devices transmitting CSI packets.
-- Real-time inference and visualization tested on standard desktops.
-- Foreground is computed as difference from a Butterworth-filtered average.
-
----
-
 ## 🧑‍💻 Maintainer
 
 **Taehyeon Kim, Ph.D.**  
