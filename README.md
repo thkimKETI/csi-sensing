@@ -30,16 +30,6 @@ csi-inference-system/
 
 ---
 
-## 🧱 System Architecture
-
-```
-[ESP Devices] --> [MQTT Broker] --> [Subscriber Process]
-   --> [Butterworth + RPCA Process] --> [Inference Process]
-   --> [GUI Heatmap Display & Label Output]
-```
-
----
-
 ## 📦 Requirements
 
 - Python 3.8+
