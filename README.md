@@ -52,7 +52,6 @@ csi/
     └── esp01_weight/
         ├── loc.pt
         └── act.pt
-```
 
 ---
 
