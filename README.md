@@ -90,3 +90,13 @@ This project is released under a custom license inspired by the MIT License. See
 
 ⚠️ **Important Notice**  
 Use of this code—commercial or non-commercial, including academic research, model training, product integration, and distribution—**requires prior written permission** from the author. Unauthorized usage will be treated as a license violation.
+
+---
+
+## 🙏 Acknowledgments
+
+---
+
+## 🙏 Acknowledgments
+
+This research was financially supported by the Ministry of Trade, Industry and Energy (MOTIE) and the Korea Institute of Advancement of Technology (KIAT) through the International Cooperative R&D Program [P0019782, Embedded AI Based Fully Autonomous Driving Software and MaaS Technology Development].
