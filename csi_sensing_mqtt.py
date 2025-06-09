@@ -67,7 +67,7 @@ manager = Manager()
 LABELS = manager.dict({"time": "", "occ": "", "loc": "", "act": ""})
 
 # MAC 주소 리스트 초기화
-mac_list = MAC_ADDRESS
+mac_list = MAC_ADDRESS # address
 
 # 데이터 취득 상태 관리
 isPushedBtn = Value('b', False)
