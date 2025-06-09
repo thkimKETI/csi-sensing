@@ -72,7 +72,7 @@ Arguments:
 
 ---
 
-## 🧑‍💻 Maintainer
+## 🧑‍💻 Maintainers
 
 **Taehyeon Kim, Ph.D.**  
 Senior Researcher, Korea Electronics Technology Institute (KETI)  
