@@ -34,7 +34,7 @@ from models import *
 from scipy.signal import butter, filtfilt
 
 # MQTT Library
-from mqtt_config import BROKER_ADDRESS, PORT, TOPIC, create_mqtt_message
+from mqtt_config import BROKER_ADDRESS, PORT, TOPIC, MAC_ADDRESS, create_mqtt_message
 import paho.mqtt.client as mqtt
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
@@ -67,7 +67,7 @@ manager = Manager()
 LABELS = manager.dict({"time": "", "occ": "", "loc": "", "act": ""})
 
 # MAC 주소 리스트 초기화
-mac_list = []
+mac_list = MAC_ADDRESS # address
 
 # 데이터 취득 상태 관리
 isPushedBtn = Value('b', False)
@@ -315,10 +315,9 @@ def on_message_with_queue(data_queue):
         try:
             payload_str = msg.payload.decode("utf-8")
             parts = payload_str.split(',',4)
-            
-            group_mac = parts[0]
-            if group_mac not in mac_list:
-                mac_list.append(group_mac)
+
+            group_mac = parts[0] # mac_address : string type
+            # print(group_mac)
 
             # group_ntp_millis = int(parts[1]) # 그룹 전체의 NTP 시간 (참고용)
             # data_format = parts[2] # 필요시 사용
@@ -359,7 +358,7 @@ def on_message_with_queue(data_queue):
 
                 # timestamp에서 초 단위 추출 (ex: '10:42:12.039' → 12)
                 ts_second = int(timestamp.split(":")[2].split(".")[0])
-                mac_idx = mac_list.index(group_mac)
+                mac_idx = mac_list.index(group_mac) # mac_address -> mac_idx (0, 1)
 
                 # 처음 수신 or 초가 바뀌면 출력 후 초기화
                 if mac_current_second[mac_idx] is None:
@@ -376,9 +375,7 @@ def on_message_with_queue(data_queue):
 
                 # count 증가
                 mac_second_count[mac_idx] += 1
-
-
-                data_queue.put((mac_list.index(group_mac), timestamp, csi_raw_data))
+                data_queue.put((mac_idx, timestamp, csi_raw_data))
                 
                 # if len(float_list) != 384:
                 #     print("Not 384!", len(float_list))
