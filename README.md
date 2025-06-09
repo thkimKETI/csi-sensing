@@ -127,10 +127,15 @@ Arguments:
 
 ---
 
-## 🧑‍💻 Author
+## 🧑‍💻 Maintainer
 
-**Taehyeon Kim** – Senior Researcher at KETI  
-Specializes in embedded AI, neural network optimization, and CSI sensing systems.
+**Taehyeon Kim, Ph.D.**  
+Senior Researcher, Korea Electronics Technology Institute (KETI)  
+📧 [taehyeon.kim@keti.re.kr](mailto:taehyeon.kim@keti.re.kr)  🌐 [Homepage](https://rcard.re.kr/detail/OISRzd7ua0tW0A1zMEwbKQ/information)
+
+**Dongwoo Kang**  
+Researcher, Korea Electronics Technology Institute (KETI)  
+📧 [dongwookang@keti.re.kr](mailto:dongwookang@keti.re.kr) 
 
 ---
 
