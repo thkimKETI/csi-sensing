@@ -105,9 +105,9 @@ This project is supported by a series of research efforts. Related publications 
 2. **Taehyun Kim**, et al.  
    _WiFi's Unspoken Tales: Deep Neural Network Decodes Human Behavior from Channel State Information_  
    *International Conference on Big Data Computing, Applications and Technologies*, IEEE/ACM, 2023
-   [🔗 Link](https://ieeexplore.ieee.org/abstract/document/1081259](https://dl.acm.org/doi/abs/10.1145/3632366.3632374)
+   [🔗 Link](https://dl.acm.org/doi/abs/10.1145/3632366.3632374)
 
-3. **Taehyun Kim**, et al.  
+4. **Taehyun Kim**, et al.  
    _Neural Represenation Learning for WiFi Channel State Information: A Unified Model for Action and Location Recognition_  
    *To be submitted*, IEEE Access, 2025.
 
