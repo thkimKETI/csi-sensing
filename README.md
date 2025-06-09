@@ -15,21 +15,6 @@ This repository provides a **real-time CSI sensing system** that processes Wi-Fi
 
 ---
 
-## 🗂️ Directory Structure
-
-```
-csi-inference-system/
-├── models/                     # Model definitions (CNN, Transformer)
-├── weight/
-│   └── esp01_weight/           # Pretrained weights for activity/location
-├── datasets/                   # Saved CSI data
-├── mqtt_config.py              # MQTT configuration
-├── main.py                     # Main script (launches pipeline and GUI)
-└── README.md
-```
-
----
-
 ## 🔧 Requirements
 
 All required Python packages are listed in the `requirements.txt` file.  
