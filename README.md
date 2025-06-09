@@ -1,6 +1,6 @@
 # 📡 Real-Time CSI Visualization & Human Activity Recognition System
 
-This repository provides a **real-time CSI sensing system** that processes Wi-Fi Channel State Information (CSI) for multi-device visualization and deep learning-based human activity & location recognition. It supports **4 ESP devices** and applies **Butterworth filtering** and **RPCA** to extract meaningful features for inference.
+This repository provides a **real-time CSI sensing system** that processes Wi-Fi Channel State Information (CSI) for multi-device visualization and deep learning-based human activity & location recognition. It supports **4 ESP devices** and applies **Butterworth filtering** to extract meaningful features for inference.
 
 ---
 
@@ -8,7 +8,7 @@ This repository provides a **real-time CSI sensing system** that processes Wi-Fi
 
 - 🧠 Real-time inference of both human activity and location (zone-based)
 - 📊 Interactive PyQt5 GUI with real-time CSI heatmaps and multi-label outputs
-- 🧼 Robust denoising pipeline using **Butterworth + RPCA**
+- 🧼 Denoising pipeline using **Butterworth filtering**
 - 🧮 Plug-and-play with **CNN or Transformer-based models**
 - 📡 MQTT-based real-time CSI ingestion from ESP devices
 - 💾 Automatic timestamped data logging
@@ -123,7 +123,7 @@ Arguments:
 
 - Supports 4 ESP devices transmitting CSI packets.
 - Real-time inference and visualization tested on standard desktops.
-- Foreground is computed as difference from a learned static background (via RPCA).
+- Foreground is computed as difference from a Butterworth-filtered average.
 
 ---
 
