@@ -1,13 +1,13 @@
-# 정리된 CSI 실시간 시각화 및 추론 시스템 코드
+# CSI Real-Time Visualization and Inference System (Cleaned Version)
 
-# 표준 라이브러리
+# Standard Libraries
 import sys, os, time, argparse, datetime, queue
 from io import StringIO
 from multiprocessing import Process, Queue, Value, Array, Lock, Manager
 from threading import Thread
 from collections import defaultdict
 
-# 외부 라이브러리
+# External Libraries
 import numpy as np
 import torch
 import csv, json, re
@@ -17,56 +17,60 @@ from PyQt5.QtCore import QTimer
 from scipy.signal import butter, filtfilt
 import paho.mqtt.client as mqtt
 
-# 사용자 정의 모듈
+# Custom Modules
 from models import *
 from mqtt_config import BROKER_ADDRESS, PORT, TOPIC
 
-# 전역 설정
+# Global Settings
 SEQUENCE_LENGTH = 180
 CSI_SAVE_PATH = f"/csi/datasets/{datetime.datetime.now().strftime('%m%d')}"
 os.makedirs(CSI_SAVE_PATH, exist_ok=True)
 
-# 공유 객체
+# Shared Resources
 manager = Manager()
 LABELS = manager.dict({"time": "", "occ": "", "loc": "", "act": ""})
 isPushedBtn = Value('b', False)
 exit_flag = Value('b', False)
 
-# 공유 배열
+# Shared Memory Arrays for Visualization
 csi_raw_array_shared = [Array('d', SEQUENCE_LENGTH * 192) for _ in range(2)]
 csi_bt_array_shared = [Array('d', SEQUENCE_LENGTH * 114) for _ in range(2)]
 csi_fg_array_shared = [Array('d', SEQUENCE_LENGTH * 114) for _ in range(2)]
 
-# 큐 및 프로세스 리스트
+# Queues and Process List
 data_queue = Queue(maxsize=180)
 inference_queue = Queue(maxsize=180)
 storage_queue = Queue(maxsize=180)
 PROCESSES = []
 
-# CSI 전처리
+# CSI Preprocessing
 
 def get_amplitude(csi):
+    # Extract meaningful subcarriers and compute amplitude
     csi = np.concatenate((csi[254:368], csi[132:246]), axis=0)
     even, odd = csi[::2], csi[1::2]
     return np.sqrt(np.square(even) + np.square(odd)) / 15.0
 
 def butterworth_filter(data, cutoff, fs, order):
+    # Apply low-pass Butterworth filter
     b, a = butter(order, cutoff / (0.5 * fs), btype='low')
     return filtfilt(b, a, data, axis=0)
 
 def apply_filter(data_chunk):
+    # Apply Butterworth and static averaging filter
     filtered = butterworth_filter(data_chunk, cutoff=0.1, fs=2, order=1)
     avg = np.mean(filtered, axis=0)
     static = np.tile(avg, (data_chunk.shape[0], 1))
     return filtered, filtered, static
 
-# MQTT 수신
+# MQTT Callback Handlers
 
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
         client.subscribe(TOPIC)
 
 def on_message(client, userdata, msg):
+    # Parse incoming CSI data
     payload = msg.payload.decode("utf-8")
     parts = payload.split(',', 4)
     mac = parts[0]
@@ -80,7 +84,7 @@ def on_message(client, userdata, msg):
         except:
             continue
 
-# 모델 로딩
+# Model Loader
 
 def load_model(path, n_classes):
     model = WiFiCSICNNAttention(num_classes=n_classes, num_esp=2)
@@ -88,9 +92,10 @@ def load_model(path, n_classes):
     model.eval()
     return model
 
-# 추론 프로세스
+# Inference Process
 
 def inference_process(queue, label_dict, exit_flag):
+    # Load location and activity recognition models
     model_loc = load_model("/csi/weight/esp01_weight/loc.pt", 4)
     model_act = load_model("/csi/weight/esp01_weight/act.pt", 4)
     while not exit_flag.value:
@@ -106,7 +111,7 @@ def inference_process(queue, label_dict, exit_flag):
         except:
             continue
 
-# 시각화 GUI
+# Real-Time GUI Viewer
 
 class CSIViewer(QMainWindow):
     def __init__(self, label_dict):
@@ -124,6 +129,7 @@ class CSIViewer(QMainWindow):
         self.graphWidget = pg.GraphicsLayoutWidget()
         layout.addWidget(self.graphWidget)
 
+        # Initialize plots and image containers
         self.plots, self.heatmaps = [], []
         for i in range(2):
             plot = self.graphWidget.addPlot(title=f"PORT {i}")
@@ -141,6 +147,7 @@ class CSIViewer(QMainWindow):
         self.setCentralWidget(widget)
 
     def update_view(self):
+        # Update each port's heatmap
         for i in range(2):
             with csi_bt_array_shared[i].get_lock():
                 arr = np.frombuffer(csi_bt_array_shared[i].get_obj()).reshape(SEQUENCE_LENGTH, 114)
@@ -150,13 +157,14 @@ class CSIViewer(QMainWindow):
         )
 
     def closeEvent(self, event):
+        # Terminate all subprocesses on exit
         exit_flag.value = True
         for p in PROCESSES:
             p.terminate()
             p.join()
         event.accept()
 
-# 메인 실행
+# Main Entry Point
 
 def main():
     client = mqtt.Client()
