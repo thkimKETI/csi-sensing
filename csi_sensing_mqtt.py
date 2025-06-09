@@ -28,7 +28,7 @@ from PyQt5.QtCore import QTimer, QThread, pyqtSignal
 import pyqtgraph as pg
 
 # MODEL
-from models.model.cnn_model import *
+from models import *
 
 # butterworth library
 from scipy.signal import butter, filtfilt
