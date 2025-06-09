@@ -6,8 +6,8 @@ This repository provides a **real-time CSI sensing system** that processes Wi-Fi
 
 ## 🔧 Features
 
-- 🧠 Real-time inference of **location** and **activity**
-- 📊 Interactive **PyQt5 GUI** with real-time CSI heatmaps
+- 🧠 Real-time inference of both human activity and location (zone-based)
+- 📊 Interactive PyQt5 GUI with real-time CSI heatmaps and multi-label outputs
 - 🧼 Robust denoising pipeline using **Butterworth + RPCA**
 - 🧮 Plug-and-play with **CNN or Transformer-based models**
 - 📡 MQTT-based real-time CSI ingestion from ESP devices
@@ -113,9 +113,9 @@ Arguments:
 
 ## 🧪 Output
 
-- Location Classes: `Z0`, `Z1`, `Z2`, `Z3`
-- Activity Classes: `Exr`, `Sit`, `Stand`, `Walk`
-- Saved CSI data (CSV): under `datasets/MMDD/`
+- Location Classes: Z0, Z1, Z2, Z3
+- Activity Classes: Exr, Sit, Stand, Walk
+- Multi-label Output: Example: Time: 15:42:12 | Location: Z1 | Activity: Walk
 
 ---
 
