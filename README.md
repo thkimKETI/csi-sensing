@@ -34,7 +34,8 @@ pip install -r requirements.txt
 
 - [Location](https://drive.google.com/file/d/1t1Di4KkHQOpncNmZmSdYPAN-0ZtC8Yqc/view?usp=sharing)
 - [Activity](https://drive.google.com/file/d/1reTq928hYPGpaUEugrAVeZoKxW_10U28/view?usp=sharing)
-If the folders do not exist, create them manually.
+
+> 📁 If the folders do not exist, please create them manually.
 
 ---
 
