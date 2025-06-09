@@ -61,8 +61,8 @@ Download the pretrained models for **location** and **activity recognition** fro
 
 | Model Type     | Path                                 | Download Link |
 |----------------|--------------------------------------|----------------|
-| Location Model | `csi/weight/esp01_weight/loc.pt`     | [📥 Download](https://drive.google.com/file/d/FILE_ID_LOC/view?usp=sharing) |
-| Activity Model | `csi/weight/esp01_weight/act.pt`     | [📥 Download](https://drive.google.com/file/d/FILE_ID_ACT/view?usp=sharing) |
+| Location Model | `csi/weight/esp01_weight/loc.pt`     | [📥 Download](https://drive.google.com/file/d/1t1Di4KkHQOpncNmZmSdYPAN-0ZtC8Yqc/view?usp=sharing) |
+| Activity Model | `csi/weight/esp01_weight/act.pt`     | [📥 Download](https://drive.google.com/file/d/1reTq928hYPGpaUEugrAVeZoKxW_10U28/view?usp=sharing) |
 
 > After downloading, place them in the following directory structure:
 >
