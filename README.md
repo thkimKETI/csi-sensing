@@ -1,1 +1,149 @@
-# CSI_Sensing
+# 📡 Real-Time CSI Visualization & Human Activity Recognition System
+
+This repository provides a **real-time CSI sensing system** that processes Wi-Fi Channel State Information (CSI) for multi-device visualization and deep learning-based human activity & location recognition. It supports **4 ESP devices** and applies **Butterworth filtering** and **RPCA** to extract meaningful features for inference.
+
+---
+
+## 🔧 Features
+
+- 🧠 Real-time inference of **location** and **activity**
+- 📊 Interactive **PyQt5 GUI** with real-time CSI heatmaps
+- 🧼 Robust denoising pipeline using **Butterworth + RPCA**
+- 🧮 Plug-and-play with **CNN or Transformer-based models**
+- 📡 MQTT-based real-time CSI ingestion from ESP devices
+- 💾 Automatic timestamped data logging
+
+---
+
+## 🗂️ Directory Structure
+
+```
+csi-inference-system/
+├── models/                     # Model definitions (CNN, Transformer)
+├── weight/
+│   └── esp01_weight/           # Pretrained weights for activity/location
+├── datasets/                   # Saved CSI data
+├── mqtt_config.py              # MQTT configuration
+├── main.py                     # Main script (launches pipeline and GUI)
+└── README.md
+```
+
+---
+
+## 🧱 System Architecture
+
+```
+[ESP Devices] --> [MQTT Broker] --> [Subscriber Process]
+   --> [Butterworth + RPCA Process] --> [Inference Process]
+   --> [GUI Heatmap Display & Label Output]
+```
+
+---
+
+## 📦 Requirements
+
+- Python 3.8+
+- MQTT Broker (e.g., Mosquitto)
+- ESP32/ESP8266 sending CSI packets
+- `torch`, `pyqt5`, `pyqtgraph`, `numpy`, `pandas`, `scipy`, `paho-mqtt`, `tqdm`
+
+```bash
+pip install -r requirements.txt
+```
+
+**Example `requirements.txt`:**
+```text
+torch
+pyqt5
+pyqtgraph
+numpy
+pandas
+scipy
+tqdm
+paho-mqtt
+```
+
+---
+
+## 🔗 Download Pretrained Weights
+
+Download the pretrained models for **location** and **activity recognition** from Google Drive:
+
+| Model Type     | Path                                 | Download Link |
+|----------------|--------------------------------------|----------------|
+| Location Model | `csi/weight/esp01_weight/loc.pt`     | [📥 Download](https://drive.google.com/file/d/FILE_ID_LOC/view?usp=sharing) |
+| Activity Model | `csi/weight/esp01_weight/act.pt`     | [📥 Download](https://drive.google.com/file/d/FILE_ID_ACT/view?usp=sharing) |
+
+> After downloading, place them in the following directory structure:
+>
+> ```bash
+> csi/
+> └── weight/
+>     └── esp01_weight/
+>         ├── loc.pt
+>         └── act.pt
+> ```
+
+If the folders do not exist, create them manually.
+
+---
+
+## 🚀 How to Run
+
+### 1. Set up MQTT
+
+Edit `mqtt_config.py` to match your broker:
+```python
+BROKER_ADDRESS = "localhost"  # or your broker's IP
+PORT = 1883
+TOPIC = "csi/data"
+```
+
+### 2. Launch the system
+
+```bash
+python main.py --inf_sec 3 --model CNN --acquire
+```
+
+Arguments:
+- `--inf_sec`: Inference time window in seconds (default: 3)
+- `--model`: Model type (`CNN` or `Transformer`)
+- `--acquire`: If provided, logs CSI data to file
+
+---
+
+## 🖥️ GUI Overview
+
+- **PORT 0–3:** CSI heatmaps (raw, filtered, foreground)
+- **Radio Button:** Toggle between raw and filtered view
+- **Button:** Start/stop CSI acquisition
+- **Labels:** Display current time, inferred location, and activity
+
+---
+
+## 🧪 Output
+
+- Location Classes: `Z0`, `Z1`, `Z2`, `Z3`
+- Activity Classes: `Exr`, `Sit`, `Stand`, `Walk`
+- Saved CSI data (CSV): under `datasets/MMDD/`
+
+---
+
+## 📌 Notes
+
+- Supports 4 ESP devices transmitting CSI packets.
+- Real-time inference and visualization tested on standard desktops.
+- Foreground is computed as difference from a learned static background (via RPCA).
+
+---
+
+## 🧑‍💻 Author
+
+**Taehyeon Kim** – Senior Researcher at KETI  
+Specializes in embedded AI, neural network optimization, and CSI sensing systems.
+
+---
+
+## 📜 License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
