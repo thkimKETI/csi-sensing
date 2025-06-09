@@ -3,7 +3,7 @@
 This repository provides a **real-time CSI sensing system** that processes Wi-Fi Channel State Information (CSI) for multi-device visualization and deep learning-based human activity & location recognition. It supports **4 ESP devices** and applies **Butterworth filtering** to extract meaningful features for inference.
 
 <div align="center">
-  <img src="./assets/demo.gif" width="600">
+  <img src="./csi_sensing_demo.png" width="600">
 </div>
 
 ---
