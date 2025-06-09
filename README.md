@@ -30,28 +30,16 @@ csi-inference-system/
 
 ---
 
-## 📦 Requirements
+## 🔧 Requirements
 
-- Python 3.8+
-- MQTT Broker (e.g., Mosquitto)
-- ESP32/ESP8266 sending CSI packets
-- `torch`, `pyqt5`, `pyqtgraph`, `numpy`, `pandas`, `scipy`, `paho-mqtt`, `tqdm`
+All required Python packages are listed in the `requirements.txt` file.  
+Please install them by running:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-**Example `requirements.txt`:**
-```text
-torch
-pyqt5
-pyqtgraph
-numpy
-pandas
-scipy
-tqdm
-paho-mqtt
-```
+> 💡 Make sure to check the `requirements.txt` file for the exact library versions used in this system.
 
 ---
 
@@ -99,23 +87,6 @@ Arguments:
 - `--inf_sec`: Inference time window in seconds (default: 3)
 - `--model`: Model type (`CNN` or `Transformer`)
 - `--acquire`: If provided, logs CSI data to file
-
----
-
-## 🖥️ GUI Overview
-
-- **PORT 0–3:** CSI heatmaps (raw, filtered, foreground)
-- **Radio Button:** Toggle between raw and filtered view
-- **Button:** Start/stop CSI acquisition
-- **Labels:** Display current time, inferred location, and activity
-
----
-
-## 🧪 Output
-
-- Location Classes: Z0, Z1, Z2, Z3
-- Activity Classes: Exr, Sit, Stand, Walk
-- Multi-label Output: Example: Time: 15:42:12 | Location: Z1 | Activity: Walk
 
 ---
 
