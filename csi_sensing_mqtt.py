@@ -735,8 +735,12 @@ def neural_network_inference_process(inference_queue, storage_queue, labels_dict
             if all(data is not None for data in inference_data.values()) and isPushedBtn.value and inf_flag:
                 # MQTT Data save
                 if acq_bool:
-                    save_data = np.concatenate([storage_data[0][0], storage_data[1][0], storage_data[2][0], storage_data[3][0]], axis=0)
-
+                    try:
+                        save_data = np.concatenate([storage_data[i][0] for i in range(mac_cnt)], axis=0)
+                    except IndexError as e:
+                        print(f"[❌] 데이터 병합 중 오류 발생: {e}")
+                        labels_dict["occ"] = "❌ 저장 오류"
+                        return
 
                     if save_cnt <= 270 and save_cnt > 10: 
                             # 10(WAIT CNT) + 260(REAL ACQ COUNT) = 270
@@ -756,10 +760,10 @@ def neural_network_inference_process(inference_queue, storage_queue, labels_dict
                         exit_flag.value = True 
 
                 print("==== 추론 직전 각 MAC별 타임스탬프 ====")
-                for i in range(4):
+                for i in range(mac_cnt):
                    print(f"MAC {i}: {storage_data[i][1] if isinstance(storage_data[i], tuple) else 'N/A'}")
                 print("=====================================")    
-                combined_data = np.stack([inference_data[i] for i in range(4)], axis=-1)
+                combined_data = np.stack([inference_data[i] for i in range(mac_cnt)], axis=-1)
                 tensor_data = torch.tensor(combined_data, dtype=torch.float32).unsqueeze(0).to(device)
                 tensor_data = tensor_data.permute(0, 3, 1, 2)
 
