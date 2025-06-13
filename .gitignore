@@ -5,6 +5,7 @@
 *.ptx
 *.cubin
 *.fatbin
+*.pt
 
 ### Python ###
 # Byte-compiled / optimized / DLL files
