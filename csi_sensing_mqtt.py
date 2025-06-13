@@ -23,11 +23,11 @@ import torch
 
 # GUI library
 from PyQt5.Qt import *
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QPushButton
 from PyQt5.QtCore import QTimer, QThread, pyqtSignal
 import pyqtgraph as pg
 
-# MODEL
 from models import *
 
 # butterworth library
@@ -56,8 +56,7 @@ SEQUENCE_LENGTH = 180  # sequence length of time series data
 sequence_len_inf = SEQUENCE_LENGTH * inf_sec
 sequence_prev_inf = SEQUENCE_LENGTH * prev_sec
 
-CSI_SAVE_PATH = f"/csi/datasets/{csi_dir}" # CSI DATA 저장 경로 ex. 0409, 0410
-os.makedirs(CSI_SAVE_PATH, exist_ok=True)
+CSI_SAVE_PATH = f"/csi/datasets/mqtt/{csi_dir}" # CSI DATA 저장 경로 ex. 0409, 0410
 
 # ======================================================= #
 #              공유 자원 및 큐 설정                        #
@@ -68,6 +67,7 @@ LABELS = manager.dict({"time": "", "occ": "", "loc": "", "act": ""})
 
 # MAC 주소 리스트 초기화
 mac_list = MAC_ADDRESS # address
+mac_cnt = len(MAC_ADDRESS)
 
 # 데이터 취득 상태 관리
 isPushedBtn = Value('b', False)
@@ -307,7 +307,7 @@ from collections import defaultdict
 mac_current_second = defaultdict(lambda: None)
 mac_second_count = defaultdict(lambda: 0)
 
-def on_message_with_queue(data_queue):
+def on_message_with_queue(data_queues):
     global mac_current_second, mac_second_count
     """MQTT 메세지 수신 시 호출될 콜백 함수"""
     global DATA_COLUMNS_NAMES
@@ -315,10 +315,8 @@ def on_message_with_queue(data_queue):
         try:
             payload_str = msg.payload.decode("utf-8")
             parts = payload_str.split(',',4)
-
-            group_mac = parts[0] # mac_address : string type
-            # print(group_mac)
-
+            
+            group_mac = parts[0]
             # group_ntp_millis = int(parts[1]) # 그룹 전체의 NTP 시간 (참고용)
             # data_format = parts[2] # 필요시 사용
             # group_count_header = int(parts[3]) # 헤더의 개수, 필요시 사용
@@ -358,24 +356,28 @@ def on_message_with_queue(data_queue):
 
                 # timestamp에서 초 단위 추출 (ex: '10:42:12.039' → 12)
                 ts_second = int(timestamp.split(":")[2].split(".")[0])
-                mac_idx = mac_list.index(group_mac) # mac_address -> mac_idx (0, 1)
+                if not group_mac in mac_list:
+                    continue
+                else:
+                    mac_idx = mac_list.index(group_mac)
 
                 # 처음 수신 or 초가 바뀌면 출력 후 초기화
                 if mac_current_second[mac_idx] is None:
                     mac_current_second[mac_idx] = ts_second
 
-                # if ts_second != mac_current_second[mac_idx]:
-                #     present = time.time()
-                #     present_str = time.strftime("%H:%M:%S", time.localtime(present))
-                #     print(f"csi per Second[{mac_idx}] - 초당 데이터 개수: {mac_second_count[mac_idx]} - esp_time: {timestamp} - arrive_time: {present_str}")
+                if ts_second != mac_current_second[mac_idx]:
+                    present = time.time()
+                    # present_str = time.strftime("%H:%M:%S", time.localtime(present))
+                    present_str = str(datetime.datetime.now())
+                    print(f"csi per Second[{mac_idx}] - 초당 데이터 개수: {mac_second_count[mac_idx]} - esp_time: {timestamp} - present_time: {present_str}")
                     
-                #     # 초기화
-                #     mac_current_second[mac_idx] = ts_second
-                #     mac_second_count[mac_idx] = 0
+                    # 초기화
+                    mac_current_second[mac_idx] = ts_second
+                    mac_second_count[mac_idx] = 0
 
                 # count 증가
                 mac_second_count[mac_idx] += 1
-                data_queue.put((mac_idx, timestamp, csi_raw_data))
+                data_queues[mac_idx].put((mac_idx, timestamp, csi_raw_data))
                 
                 # if len(float_list) != 384:
                 #     print("Not 384!", len(float_list))
@@ -400,8 +402,11 @@ def load_model(path, n_classes, model_type):
     
     #path = path.split("/")
     if model_type == "CNN":
-        model = WiFiCSICNNAttention(num_classes=n_classes, num_esp=2)
+        model = WiFiCSICNNAttention(num_classes=n_classes, num_esp=mac_cnt)
         #path[-2] = "CNN"
+    elif model_type == "CNN1S":
+        model = WiFiCSICNNAttention1S(num_classes=n_classes, num_esp=mac_cnt)
+    #    #path[-2] = "CNN"
     else:
         model = Transformer(
             feature=114,
@@ -422,11 +427,10 @@ def load_model(path, n_classes, model_type):
     model.load_state_dict(torch.load(path, weights_only=True))
     model.eval()
     return model.to(device)
-
 # ======================================================= #
 #                 MQTT 구독+처리 프로세스                      #
 # ======================================================= #
-def data_mqttsub_process(data_queue, garbage_counter, exit_flag):
+def data_mqttsub_process(data_queues, garbage_counter, exit_flag):
     """MQTT CSI Data Subscriber
 
     Connects to an MQTT broker, subscribes to a specified topic, and stores received CSI data in a data-queue.
@@ -450,8 +454,8 @@ def data_mqttsub_process(data_queue, garbage_counter, exit_flag):
         while not exit_flag.value:
             try:
                 if isPushedBtn.value:
-                    client.on_message = on_message_with_queue(data_queue) # 실질적으로 데이터를 큐에 저장하는 역할
-                    time.sleep(0.00001)
+                    client.on_message = on_message_with_queue(data_queues) # 실질적으로 데이터를 큐에 저장하는 역할
+                    time.sleep(0.001)
             except Exception as e:
                 print(f"[❌] MQTT 데이터 구독 오류: {e}")
                 time.sleep(1)  # 오류 발생 시 잠시 대기
@@ -602,7 +606,7 @@ def data_mqtt_processing_process(data_queue, inference_queue, storage_queue, vis
                     inference_queue.put((mac, fg_buffers[mac]))
 
                     # 데이터 저장 큐에 데이터 추가 (amplitude 데이터 사용)
-                    storage_queue.put((mac, data_chunk))
+                    storage_queue.put((mac, ts, data_chunk))
             else:
                 # 충분한 데이터가 없을 때는 원시 데이터 사용
                 bt_buffers[mac][buffer_index] = amplitude
@@ -706,8 +710,8 @@ def neural_network_inference_process(inference_queue, storage_queue, labels_dict
     inf_flag = False
     
     # 추론 루프
-    inference_data = {i: None for i in range(2)}  # 각 포트별 추론 데이터
-    storage_data = {i: None for i in range(2)} # 각 포트별 저장 데이터
+    inference_data = {i: None for i in range(mac_cnt)}  # 각 포트별 추론 데이터
+    storage_data = {i: None for i in range(mac_cnt)} # 각 포트별 저장 데이터
     while not exit_flag.value:
 
         try:
@@ -716,49 +720,46 @@ def neural_network_inference_process(inference_queue, storage_queue, labels_dict
                 port_num, data = inference_queue.get_nowait()
                 inference_data[port_num] = data
 
-                s_port_num, s_data = storage_queue.get_nowait()
+                s_port_num, s_ts, s_data = storage_queue.get_nowait()
                 # print(port_num, s_port_num, data, "\n",  s_data)
-                storage_data[s_port_num] = s_data
+                storage_data[s_port_num] = (s_data, s_ts)
                 
             except queue.Empty:
                 time.sleep(0.01)  # 큐가 비어있으면 잠시 대기
                 continue
 
-            if time.time() - start_time > 0.5: 
+            if time.time() - start_time > 1.0: 
                 inf_flag = True
             
-            
-            # MQTT Data save
-            # if acq_bool:
-            #     if save_cnt <= 360:
-            #             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")  # 날짜_시간 (초 단위까지)
-            #             os.makedirs("/csi/datasets/" +timestamp[4:8], exist_ok=True)
-            #             filename = f"/csi/datasets/{timestamp[4:8]}/{timestamp}_{save_cnt}.csv"
-            #             np.savetxt(filename, storage_data[0], delimiter=",")
-            #             save_cnt += 1
-            #             print(f"# of saved files: {save_cnt}")                    
-
-            
-            # 모든 포트에서 데이터가 준비되었는지 확인
+  
             if all(data is not None for data in inference_data.values()) and isPushedBtn.value and inf_flag:
-                # 데이터 준비
-                # Reconstruction Error 확인
-                #print("------------------------------------------------")
-                #print(int(sum(sum(abs(inference_data[0])))),int(sum(sum(abs(inference_data[1])))),int(sum(sum(abs(inference_data[2])))),int(sum(sum(abs(inference_data[3])))) )
-                # 데이터 저장
-                if acq_bool: 
-                    save_data = np.concatenate([storage_data[0], storage_data[1]], axis=0)
-                    if save_cnt <= 360:
+                # MQTT Data save
+                if acq_bool:
+                    save_data = np.concatenate([storage_data[0][0], storage_data[1][0], storage_data[2][0], storage_data[3][0]], axis=0)
+
+
+                    if save_cnt <= 270 and save_cnt > 10: 
+                            # 10(WAIT CNT) + 260(REAL ACQ COUNT) = 270
                             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")  # 날짜_시간 (초 단위까지)
-                            os.makedirs("/csi/datasets/" +timestamp[4:8], exist_ok=True)
-                            filename = f"/csi/datasets/{timestamp[4:8]}/{timestamp}_{save_cnt}.csv"
+                            os.makedirs("/csi/datasets/mqtt/" +timestamp[4:8], exist_ok=True)
+                            filename = f"/csi/datasets/mqtt/{timestamp[4:8]}/{timestamp}_{save_cnt-10}_mqtt.csv"
                             np.savetxt(filename, save_data, delimiter=",")
                             save_cnt += 1
-                            print(f"# of saved files: {save_cnt}")
-                    else: 
-                        print("🍀🍀🍀🍀🍀🍀🍀🍀🍀🍀End of saving🍀🍀🍀🍀🍀🍀🍀🍀🍀🍀🍀")
-                
-                combined_data = np.stack([inference_data[i] for i in range(2)], axis=-1)
+                            print(f"[📁] {save_cnt-10}개 파일이 저장되었습니다.")
+                            labels_dict["occ"] = f"📁{save_cnt-10} SAVE"
+                    elif save_cnt <= 10:
+                           labels_dict["occ"] = "NOT ACQUSITION"
+                           save_cnt += 1
+                    else:
+                        print(f"[🍀] {filename} 데이터 취득을 종료합니다.") 
+                        labels_dict["occ"] = "🍀🍀DONE!🍀🍀"
+                        exit_flag.value = True 
+
+                print("==== 추론 직전 각 MAC별 타임스탬프 ====")
+                for i in range(4):
+                   print(f"MAC {i}: {storage_data[i][1] if isinstance(storage_data[i], tuple) else 'N/A'}")
+                print("=====================================")    
+                combined_data = np.stack([inference_data[i] for i in range(4)], axis=-1)
                 tensor_data = torch.tensor(combined_data, dtype=torch.float32).unsqueeze(0).to(device)
                 tensor_data = tensor_data.permute(0, 3, 1, 2)
 
@@ -772,13 +773,18 @@ def neural_network_inference_process(inference_queue, storage_queue, labels_dict
                     # 병렬 추론을 위한 스레드 생성
                     loc_result = [None]
                     act_result = [None]
-                    
+
                     def infer_loc():
+                        #print(tensor_data.shape)
                         result = model_loc(tensor_data)
+                        # result = model_loc(tensor_data[:, :, -60:, :])
+                        print(result)
                         _, loc_result[0] = torch.max(result, 1)
+                                            
                     
                     def infer_act():
                         result = model_act(tensor_data)
+                        # result = model_loc(tensor_data[:, :, -60:, :])
                         _, act_result[0] = torch.max(result, 1)
                     
                     # 병렬 추론 실행
@@ -790,7 +796,7 @@ def neural_network_inference_process(inference_queue, storage_queue, labels_dict
                     t2.join()
                 
                 # 결과 처리
-                #loc_pred = torch.argmax(loc_output, dim=1).item(
+                #loc_pred = torch.argmax(loc_output, dim=1).item()
                 #act_pred = torch.argmax(act_output, dim=1).item()
                 
                 # 결과 저장
@@ -812,7 +818,7 @@ def neural_network_inference_process(inference_queue, storage_queue, labels_dict
                 
                 # 추론 데이터 초기화 (다음 추론을 위해)
                 # print(inference_data, np.shape(inference_data))
-                for i in range(2):
+                for i in range(mac_cnt):
                     inference_data[i] = None
                 #time.sleep(0.5)
 
@@ -824,8 +830,10 @@ def neural_network_inference_process(inference_queue, storage_queue, labels_dict
             print(f"[❌] 신경망 추론 오류: {e}")
             traceback.print_exc()
             time.sleep(0.0001)  # 오류 발생 시 잠시 대기
-    
+              
     print("[🧠] 신경망 추론 프로세스 종료")
+    exit_flag.value = True
+
 
 # ======================================================= #
 #                      GUI 클래스                          #
@@ -837,8 +845,9 @@ class CSIDataGraphicalWindow(QMainWindow):
         self.labels_dict = labels_dict
         self.isPushedBtn = isPushedBtn
         
-        self.setWindowTitle("Quad-chips CSI SENSING")
-        self.setGeometry(1500, 0, 1600, 1400) # location(x, y), width, height
+        self.setWindowTitle("Quad-MQTT CSI SENSING")
+        self.setWindowIcon(QIcon("icon.png"))
+        self.setGeometry(1900, 0, 1600, 1400) # location(x, y), width, height
 
         # SETTING MAIN WIDGET & LAYOUT
         self.mainWidget = QWidget(self)
@@ -1040,7 +1049,7 @@ def main():
         # MQTT Data Acquisition
         process = Process(
             target= data_mqttsub_process,
-            args=(data_queues[0], garbage_counters[0], exit_flag)
+            args=(data_queues, garbage_counters, exit_flag)
         )
         process.daemon= True
         process.start()
@@ -1048,13 +1057,15 @@ def main():
 
 
         # MQTT Data Processing
-        process = Process(
-            target=data_mqtt_processing_process,
-            args=(data_queues[0], inference_queue, storage_queue, visualization_queues[0], exit_flag)    
-        )
-        process.daemon = True
-        process.start()
-        PROCESSES.append(process)
+
+        for i in range(mac_cnt):
+            process = Process(
+                target=data_mqtt_processing_process,
+                args=(data_queues[i], inference_queue, storage_queue, visualization_queues[i], exit_flag)    
+            )
+            process.daemon = True
+            process.start()
+            PROCESSES.append(process)
 
 
 
@@ -1089,3 +1100,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
