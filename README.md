@@ -57,6 +57,7 @@ Edit `mqtt_config.py` to match your broker:
 BROKER_ADDRESS = "localhost"  # or your broker's IP
 PORT = 1883
 TOPIC = "csi/data"
+MAC_ADDRESS = ["MAC_ADDRESS_1", "MAC_ADDRESS_2"]
 ```
 
 ### 2. Launch the system
