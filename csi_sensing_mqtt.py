@@ -109,11 +109,12 @@ DATA_COLUMNS_NAMES = ["type", "id", "timestamp", "mac", "rssi", "rate", "sig_mod
 # ======================================================= #
 #                   유틸리티 함수                          #
 # ======================================================= #
-def get_amplitude_visual(csi, is_sequence=False):
+def get_amplitude(csi, visual, is_sequence=False):
     csi = np.array(csi)
-
-    # Zero-subcarriers 제거 및 Roll subcarrier index 
-    # csi = np.concatenate((csi[254:368],csi[132:246]),axis=0)
+    
+    if not visual:
+        # Zero-subcarriers 제거 및 Roll subcarrier index 
+        csi = np.concatenate((csi[254:368],csi[132:246]),axis=0)
 
     if is_sequence==True: 
         even_elements = csi[:,::2]
@@ -127,23 +128,6 @@ def get_amplitude_visual(csi, is_sequence=False):
     # return (amplitude-min(amplitude)) /(max(amplitude)-min(amplitude)) 
     return amplitude / 15.0
 
-def get_amplitude(csi, is_sequence=False):
-    csi = np.array(csi)
-
-    # Zero-subcarriers 제거 및 Roll subcarrier index 
-    csi = np.concatenate((csi[254:368],csi[132:246]),axis=0)
-
-    if is_sequence==True: 
-        even_elements = csi[:,::2]
-        odd_elements = csi[:,1::2]
-    else:
-        even_elements = csi[::2]
-        odd_elements = csi[1::2]
-    amplitude = np.sqrt(np.square(even_elements) + np.square(odd_elements))
-
-    # min-max 정규화 
-    # return (amplitude-min(amplitude)) /(max(amplitude)-min(amplitude)) 
-    return amplitude / 15.0
 
 def butterworth_filter(data, cutoff, fs, order, filter_type='low', prev_data=None):
     """
@@ -366,10 +350,8 @@ def on_message_with_queue(data_queues):
                     mac_current_second[mac_idx] = ts_second
 
                 if ts_second != mac_current_second[mac_idx]:
-                    present = time.time()
-                    # present_str = time.strftime("%H:%M:%S", time.localtime(present))
-                    present_str = str(datetime.datetime.now())
-                    print(f"csi per Second[{mac_idx}] - 초당 데이터 개수: {mac_second_count[mac_idx]} - esp_time: {timestamp} - present_time: {present_str}")
+                    # How many CSI packets are received per Second
+                    print(f"csi per Second[{mac_idx}] - 초당 데이터 개수: {mac_second_count[mac_idx]} - esp_time: {timestamp}")
                     
                     # 초기화
                     mac_current_second[mac_idx] = ts_second
@@ -381,10 +363,6 @@ def on_message_with_queue(data_queues):
                 
                 # if len(float_list) != 384:
                 #     print("Not 384!", len(float_list))
-
-
-                # 4. (타임스탬프(str), CSI 데이터(list)) 튜플로 Queue에 넣기
-                # data_queue.put((mac_list.index(group_mac), timestamp, float_list))
 
 
         except UnicodeDecodeError:
@@ -501,36 +479,6 @@ def data_mqtt_processing_process(data_queue, inference_queue, storage_queue, vis
 
                 # timestamp -> 초 단위로 변환
                 ts_second = int(ts.split(":")[2].split(".")[0])
-                # print(ts_second)
-
-                # if (csi_data[0] != 0) or (csi_data[247] != 0) or (csi_data[373] != 0) or (csi_data[128] == 0):
-                #     error_cnt[mac] +=1
-                #     continue
-
-                # if any(val == 0 or val > 88 for val in csi_data[132:142]):
-                #     error_cnt[mac] +=1
-                #     # print("ERROR",csi_data[132:142])
-                #     continue
-
-
-                # 새로운 초로 넘어갔을 때 출력 및 초기화
-                # if current_ts is None:
-                #     current_ts = ts_second
-
-                # if ts_second != current_ts:
-                #     # 출력
-                #     print(f"csi per Second[0] \n 에러 발생 횟수 : {error_cnt[0]} \n 초당 데이터 개수 : {second_cnt[0]} \n 시간 : {ts}")
-                #     print(f"csi per Second[1] \n 에러 발생 횟수 : {error_cnt[1]} \n 초당 데이터 개수 : {second_cnt[1]} \n 시간 : {ts}")
-                    
-                #     # 현재 초 갱신
-                #     current_ts = ts_second
-
-                #     # 카운트 초기화
-                #     second_cnt = [0, 0]
-                #     error_cnt = [0, 0]
-
-                # # 카운트 업데이트
-                # second_cnt[mac] += 1
                 
             except queue.Empty:
                 time.sleep(0.001)  # 큐가 비어있으면 잠시 대기
@@ -547,8 +495,8 @@ def data_mqtt_processing_process(data_queue, inference_queue, storage_queue, vis
                 inference_buffers[mac] = []
 
             # CSI 데이터 처리
-            amplitude = get_amplitude(csi_data) # test chase : confirm zero subcarrier!
-            amplitude_visual = get_amplitude_visual(csi_data)
+            amplitude = get_amplitude(csi_data, visual=False) # test chase : confirm zero subcarrier!
+            amplitude_visual = get_amplitude(csi_data, visual=True)
             # 버퍼에 원시 데이터 저장
             raw_buffers[mac][buffer_index] = amplitude_visual
 
@@ -564,8 +512,6 @@ def data_mqtt_processing_process(data_queue, inference_queue, storage_queue, vis
                 # 데이터 청크 준비
                 data_chunk = np.array(inference_buffers[mac])
                 inference_buffers[mac].pop(0)
-                #inference_buffer = []      #sehora
-                #print(data_chunk.shape)
                 
                 # Butterworth 필터와 RPCA 적용
                 filtered_chunk, full_rank1, static1 = apply_chunk_butterworth_and_rpca(
@@ -578,6 +524,7 @@ def data_mqtt_processing_process(data_queue, inference_queue, storage_queue, vis
                 # 시각화용 버퍼 사이즈가 추론 사이즈 보다 클 경우, 시각화용 버퍼 업데이트 (가장 최근 데이터)
                 #bt_buffer[buffer_index] = filtered_chunk[-1]
                 #fg_buffer[buffer_index] = (filtered_chunk[-1] - static1[-1])*2.0
+
                 # 시각화용 버퍼 사이즈와 추론 사이즈가 일치할 경우, 시각화용 버퍼 업데이트
                 bt_buffers[mac] = filtered_chunk
                 fg_buffers[mac] = (filtered_chunk - static1) * 2.0
@@ -588,11 +535,11 @@ def data_mqtt_processing_process(data_queue, inference_queue, storage_queue, vis
                 # 추론 및 저장을 위한 충분한 데이터가 수집되었고 버튼이 눌려있을 때
                 if isPushedBtn.value:
                     # 추론 큐가 가득 차면 오래된 데이터 제거
-                    # if inference_queue.full():
-                    #     try:
-                    #         inference_queue.get_nowait()
-                    #     except queue.Empty:
-                    #         pass
+                    if inference_queue.full():
+                        try:
+                            inference_queue.get_nowait()
+                        except queue.Empty:
+                            pass
                     
                     if storage_queue.full():
                         try: 
@@ -633,36 +580,6 @@ def data_mqtt_processing_process(data_queue, inference_queue, storage_queue, vis
     
     print(f"[🔄] MQTT 구독 데이터 처리 프로세스 종료")
 
-def parse_csi_data(line):
-    """
-    Extracts the CSI values from a CSI_DATA line.
-    Returns a list of floats.
-    """
-    try:
-        # Find the start of the quoted list (first field starting with "[")
-        quote_start = line.find('["')
-        if quote_start == -1:
-            quote_start = line.find('"[')
-        if quote_start == -1:
-            raise ValueError("CSI data not found in line.")
-
-        # Grab everything from that quote onward
-        csi_str = line[quote_start:].strip()
-
-        # Remove surrounding quotes
-        if csi_str.startswith('"') and csi_str.endswith('"'):
-            csi_str = csi_str[1:-1]
-
-        # Now safely evaluate the list
-        csi_values = ast.literal_eval(csi_str)
-
-        # Convert all to float
-        return [float(x) for x in csi_values]
-
-    except Exception as e:
-        print(f"Error parsing CSI data: {e}")
-        return None
-
 # ======================================================= #
 #                 신경망 추론 프로세스                        #
 # ======================================================= #
@@ -676,22 +593,12 @@ def neural_network_inference_process(inference_queue, storage_queue, labels_dict
         exit_flag: 프로세스 종료 플래그
     """
     print("[🧠] 신경망 추론 프로세스 시작")
-    
-    # #MQTT 클라이언트 설정
-    # client = mqtt.Client()
-    # try:
-    #     client.connect(BROKER_ADDRESS, PORT)
-    #     print("[✅] MQTT 브로커 연결 성공")
-    # except Exception as e:
-    #     print(f"[❌] MQTT 브로커 연결 실패: {e}")
-    
+
     # 모델 로딩 (Load Model)
     device = "cpu"  # 필요시 CUDA 사용 가능
-    model_name = "0401_0409_60_1S_PREV"
-    save_cnt = 0
+    save_cnt = 0 # save data counting
     
     try:
-        # model_occ = load_model(f"/csi/weight/{model_name}/CNN/occ", n_classes=2, model_type=model_type)
         model_loc = load_model("./loc.pt", n_classes=4, model_type="CNN")
         model_act = load_model("./act.pt", n_classes=4, model_type="CNN")
         print("[✅] 모델 로딩 성공")
@@ -702,7 +609,7 @@ def neural_network_inference_process(inference_queue, storage_queue, labels_dict
     # 클래스 매핑
     loc_classes = ["Z0", "Z1", "Z2", "Z3"]
     act_classes = ["Exr", "Sit", "Stand", "Walk"]
-    gst_classes = ["circle", "line"]
+    # gst_classes = ["circle", "line"]
 
     start_time = time.time()
     inf_flag = False
@@ -719,7 +626,6 @@ def neural_network_inference_process(inference_queue, storage_queue, labels_dict
                 inference_data[port_num] = data
 
                 s_port_num, s_ts, s_data = storage_queue.get_nowait()
-                # print(port_num, s_port_num, data, "\n",  s_data)
                 storage_data[s_port_num] = (s_data, s_ts)
                 
             except queue.Empty:
@@ -761,14 +667,13 @@ def neural_network_inference_process(inference_queue, storage_queue, labels_dict
                 for i in range(mac_cnt):
                    print(f"MAC {i}: {storage_data[i][1] if isinstance(storage_data[i], tuple) else 'N/A'}")
                 print("=====================================")    
+
                 combined_data = np.stack([inference_data[i] for i in range(mac_cnt)], axis=-1)
                 tensor_data = torch.tensor(combined_data, dtype=torch.float32).unsqueeze(0).to(device)
                 tensor_data = tensor_data.permute(0, 3, 1, 2)
 
 
 
-                # 1s, 2s 
-                #tensor_data = tensor_data[:, :, -60:, :]
                 
                 # 추론 수행
                 with torch.no_grad():
@@ -777,16 +682,14 @@ def neural_network_inference_process(inference_queue, storage_queue, labels_dict
                     act_result = [None]
 
                     def infer_loc():
-                        #print(tensor_data.shape)
                         result = model_loc(tensor_data)
-                        # result = model_loc(tensor_data[:, :, -60:, :])
-                        print(result)
+                        # result = model_loc(tensor_data[:, :, -60:, :]) # 1s, 2s condition
                         _, loc_result[0] = torch.max(result, 1)
                                             
                     
                     def infer_act():
                         result = model_act(tensor_data)
-                        # result = model_loc(tensor_data[:, :, -60:, :])
+                        # result = model_loc(tensor_data[:, :, -60:, :]) # # 1s, 2s condition
                         _, act_result[0] = torch.max(result, 1)
                     
                     # 병렬 추론 실행
@@ -847,8 +750,8 @@ class CSIDataGraphicalWindow(QMainWindow):
         self.labels_dict = labels_dict
         self.isPushedBtn = isPushedBtn
         
-        self.setWindowTitle("Quad-MQTT CSI SENSING")
-        self.setWindowIcon(QIcon("icon.png"))
+        self.setWindowTitle("MQTT CSI SENSING")
+        self.setWindowIcon(QIcon("icon.png")) # depends on the OS version
         self.setGeometry(1900, 0, 1600, 1400) # location(x, y), width, height
 
         # SETTING MAIN WIDGET & LAYOUT
@@ -1038,10 +941,7 @@ class CSIDataGraphicalWindow(QMainWindow):
 # ======================================================= #
 def main():
     # 명령행 인수 파싱
-    acq_bool, csi_dir, model_type, inf_sec, prev_sec = parse_argument()
-    
-    # 포트 설정
-    port_names = ['MQTT0']
+    acq_bool = parse_argument()
     
     # 프로세스 리스트
     global PROCESSES
@@ -1059,7 +959,6 @@ def main():
 
 
         # MQTT Data Processing
-
         for i in range(mac_cnt):
             process = Process(
                 target=data_mqtt_processing_process,
