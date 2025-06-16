@@ -423,9 +423,7 @@ def load_model(path, n_classes, model_type):
     #path = "/".join(path)   
     #print(path)   
     #model.load_state_dict(torch.load(path, weights_only=True))
-
-    model.load_state_dict(torch.load(path, weights_only=True))
-    model.eval()
+    #model.eval()
     return model.to(device)
 # ======================================================= #
 #                 MQTT 구독+처리 프로세스                      #
@@ -694,8 +692,8 @@ def neural_network_inference_process(inference_queue, storage_queue, labels_dict
     
     try:
         # model_occ = load_model(f"/csi/weight/{model_name}/CNN/occ", n_classes=2, model_type=model_type)
-        model_loc = load_model("/csi/weight/esp01_weight/loc.pt", n_classes=4, model_type="CNN")
-        model_act = load_model("/csi/weight/esp01_weight/act.pt", n_classes=4, model_type="CNN")
+        model_loc = load_model("./loc.pt", n_classes=4, model_type="CNN")
+        model_act = load_model("./act.pt", n_classes=4, model_type="CNN")
         print("[✅] 모델 로딩 성공")
     except Exception as e:
         print(f"[❌] 모델 로딩 실패: {e}")
