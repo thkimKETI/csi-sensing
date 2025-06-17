@@ -151,62 +151,6 @@ def butterworth_filter(data, cutoff, fs, order, filter_type='low', prev_data=Non
     filtered_data = np.ascontiguousarray(filtered_data) # 음수 스트라이드를 방지하기 위해 복사
     return filtered_data
 
-def robust_pca(M, lamb=None, mu=None, max_iter=1, tol=1e-5):
-    """
-    ### Robust Principal Component Analysis (RPCA) 구현
-    
-    Args:
-        M: 입력 행렬
-        lamb: 정규화 파라미터
-        mu: 증강 라그랑지안 파라미터
-        max_iter: 최대 반복 횟수
-        tol: 수렴 허용 오차
-    
-    Returns:
-        L: 저차원 행렬 (배경)
-        S: 희소 행렬 (전경)
-    """
-    # 행렬 노름 계산
-    norm_M = np.linalg.norm(M, ord='fro')
-    
-    # 초기화
-    L = np.zeros_like(M)
-    S = np.zeros_like(M)
-    
-    # 파라미터 설정
-    if lamb is None:
-        lamb = 1.0 / np.sqrt(max(M.shape))
-    if mu is None:
-        mu = M.size / (4.0 * np.linalg.norm(M, ord=1))
-    
-    # 초기 Y 설정
-    Y = M / max(np.linalg.norm(M, ord=2), np.linalg.norm(M, ord=np.inf) / lamb)
-    
-    # RPCA 알고리즘 반복
-    for _ in range(max_iter):
-        # L 업데이트 (특이값 임계처리)
-        U, sigma, VT = svd(M - S + Y / mu, full_matrices=False)
-        sigma_shrink = np.maximum(sigma - 1.0 / mu, 0)
-        L_new = U @ np.diag(sigma_shrink) @ VT
-        
-        # S 업데이트 (소프트 임계처리)
-        S_new = np.sign(M - L_new + Y / mu) * np.maximum(np.abs(M - L_new + Y / mu) - lamb / mu, 0)
-        
-        # Y 업데이트 (라그랑지안 승수)
-        Y = Y + mu * (M - L_new - S_new)
-        
-        # 수렴 확인
-        PL = L_new - L
-        PS = S_new - S
-        S = S_new
-        L = L_new
-        
-        err = np.linalg.norm(PL, 'fro') / norm_M + np.linalg.norm(PS, 'fro') / norm_M
-        if err < tol:
-            break
-    
-    return L, S
-
 def apply_chunk_butterworth_and_rpca(data_chunk, fs=60, cutoff=0.1, order=2, rpca_lamb=None):
     """
     데이터 청크에 Butterworth 필터와 RPCA를 순차적으로 적용
@@ -216,7 +160,6 @@ def apply_chunk_butterworth_and_rpca(data_chunk, fs=60, cutoff=0.1, order=2, rpc
         fs: 샘플링 주파수
         cutoff: 차단 주파수
         order: 필터 차수
-        rpca_lamb: RPCA 정규화 파라미터
     
     Returns:
         filtered_data: Butterworth 필터링된 데이터
@@ -229,21 +172,12 @@ def apply_chunk_butterworth_and_rpca(data_chunk, fs=60, cutoff=0.1, order=2, rpc
     
     # 1. Butterworth 필터 적용
     filtered_data = butterworth_filter(data_chunk, cutoff=cutoff, fs=fs, order=order)
-    
-    # 2. RPCA 적용
-    #L, S = robust_pca(filtered_data, lamb=rpca_lamb)
-    #U, Sigma, VT = randomized_svd(filtered_data, n_components=1, random_state=7671)
-    #rank1 = Sigma[0] * np.outer(U[:, 0], VT[0, :])
-    #avg_vector = np.mean(rank1, axis=0)
-    #static1 = np.tile(avg_vector, (data_chunk.shape[0],1))
-
-    rank1 = filtered_data
 
     # 2. inference_len 크기의 평균 벡터 추출 및 크기 확장
     avg_vec = np.mean(filtered_data,axis=0) 
     static1 = np.tile(avg_vec, (data_chunk.shape[0],1))
 
-    return filtered_data, rank1, static1
+    return filtered_data, static1
 
 def terminate_process():
     """모든 프로세스를 종료하는 함수"""
@@ -331,13 +265,7 @@ def on_message_with_queue(data_queues):
                 except:
                     print(f"[⛔️ ] 마지막 컬럼(CSI 데이터 필드)가 JSON 형식이 아닙니다.")
                     continue
-		
-                # if csi_data_len != len(csi_raw_data):
-                #     # csi_data의 -3번째 필드(데이터 길이)와 실제 데이터의 길이가 다르면, 잘못된 데이터이므로 무시
-                #     print(f"[⛔️ ] csi_data의 -3번째 필드({csi_data_len}가 실제 데이터의 길이({len(csi_raw_data)})와 다릅니다. ")
-                #     print(csi_data)
-                #     continue
-
+			
                 # timestamp에서 초 단위 추출 (ex: '10:42:12.039' → 12)
                 ts_second = int(timestamp.split(":")[2].split(".")[0])
                 if not group_mac in mac_list:
@@ -360,9 +288,6 @@ def on_message_with_queue(data_queues):
                 # count 증가
                 mac_second_count[mac_idx] += 1
                 data_queues[mac_idx].put((mac_idx, timestamp, csi_raw_data))
-                
-                # if len(float_list) != 384:
-                #     print("Not 384!", len(float_list))
 
 
         except UnicodeDecodeError:
@@ -398,15 +323,11 @@ def load_model(path, n_classes, model_type):
             device=device).to(device=device)
         path[-2] = "Transformer"
 
-    #path = "/".join(path)   
-    #print(path)   
-    #model.load_state_dict(torch.load(path, weights_only=True))
-    #model.eval()
     return model.to(device)
 # ======================================================= #
 #                 MQTT 구독+처리 프로세스                      #
 # ======================================================= #
-def data_mqttsub_process(data_queues, garbage_counter, exit_flag):
+def data_mqttsub_process(data_queues, exit_flag):
     """MQTT CSI Data Subscriber
 
     Connects to an MQTT broker, subscribes to a specified topic, and stores received CSI data in a data-queue.
@@ -514,22 +435,17 @@ def data_mqtt_processing_process(data_queue, inference_queue, storage_queue, vis
                 inference_buffers[mac].pop(0)
                 
                 # Butterworth 필터와 RPCA 적용
-                filtered_chunk, full_rank1, static1 = apply_chunk_butterworth_and_rpca(
+                filtered_chunk, static1 = apply_chunk_butterworth_and_rpca(
                     data_chunk, 
                     fs=2, 
                     cutoff=0.1, 
                     order=1
                 )
                 
-                # 시각화용 버퍼 사이즈가 추론 사이즈 보다 클 경우, 시각화용 버퍼 업데이트 (가장 최근 데이터)
-                #bt_buffer[buffer_index] = filtered_chunk[-1]
-                #fg_buffer[buffer_index] = (filtered_chunk[-1] - static1[-1])*2.0
 
                 # 시각화용 버퍼 사이즈와 추론 사이즈가 일치할 경우, 시각화용 버퍼 업데이트
                 bt_buffers[mac] = filtered_chunk
                 fg_buffers[mac] = (filtered_chunk - static1) * 2.0
-                #bt_buffers[mac] = data_chunk
-                #fg_buffers[mac] = data_chunk
 
                 
                 # 추론 및 저장을 위한 충분한 데이터가 수집되었고 버튼이 눌려있을 때
@@ -609,7 +525,6 @@ def neural_network_inference_process(inference_queue, storage_queue, labels_dict
     # 클래스 매핑
     loc_classes = ["Z0", "Z1", "Z2", "Z3"]
     act_classes = ["Exr", "Sit", "Stand", "Walk"]
-    # gst_classes = ["circle", "line"]
 
     start_time = time.time()
     inf_flag = False
@@ -672,8 +587,6 @@ def neural_network_inference_process(inference_queue, storage_queue, labels_dict
                 tensor_data = torch.tensor(combined_data, dtype=torch.float32).unsqueeze(0).to(device)
                 tensor_data = tensor_data.permute(0, 3, 1, 2)
 
-
-
                 
                 # 추론 수행
                 with torch.no_grad():
@@ -710,22 +623,8 @@ def neural_network_inference_process(inference_queue, storage_queue, labels_dict
                 labels_dict["loc"] = loc_classes[loc_result[0].item()]
                 labels_dict["act"] = act_classes[act_result[0].item()]
                 
-                # # MQTT로 결과 전송
-                # try:
-                #    message = create_mqtt_message(
-                #        time=current_time,
-                #        loc=labels_dict["loc"],
-                #        act=labels_dict["act"]
-                #     )
-                #    client.publish(TOPIC, message)
-                # except Exception as e:
-                #    print(f"[❌] MQTT 메시지 전송 실패: {e}")
-                
-                # 추론 데이터 초기화 (다음 추론을 위해)
-                # print(inference_data, np.shape(inference_data))
                 for i in range(mac_cnt):
                     inference_data[i] = None
-                #time.sleep(0.5)
 
                 start_time = time.time()
                 inf_flag = False
@@ -951,12 +850,11 @@ def main():
         # MQTT Data Acquisition
         process = Process(
             target= data_mqttsub_process,
-            args=(data_queues, garbage_counters, exit_flag)
+            args=(data_queues, exit_flag)
         )
         process.daemon= True
         process.start()
         PROCESSES.append(process)
-
 
         # MQTT Data Processing
         for i in range(mac_cnt):
@@ -967,8 +865,6 @@ def main():
             process.daemon = True
             process.start()
             PROCESSES.append(process)
-
-
 
         # 신경망 추론 프로세스 시작
         inference_process = Process(
