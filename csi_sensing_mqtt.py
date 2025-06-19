@@ -52,6 +52,7 @@ def parse_argument():
 
 acq_bool, csi_dir, model_type, inf_sec, prev_sec = parse_argument()
 
+
 SEQUENCE_LENGTH = 180  # sequence length of time series data
 sequence_len_inf = SEQUENCE_LENGTH * inf_sec
 sequence_prev_inf = SEQUENCE_LENGTH * prev_sec
@@ -442,7 +443,6 @@ def data_mqtt_processing_process(data_queue, inference_queue, storage_queue, vis
                     order=1
                 )
                 
-
                 # 시각화용 버퍼 사이즈와 추론 사이즈가 일치할 경우, 시각화용 버퍼 업데이트
                 bt_buffers[mac] = filtered_chunk
                 fg_buffers[mac] = (filtered_chunk - static1) * 2.0
@@ -513,7 +513,8 @@ def neural_network_inference_process(inference_queue, storage_queue, labels_dict
     # 모델 로딩 (Load Model)
     device = "cpu"  # 필요시 CUDA 사용 가능
     save_cnt = 0 # save data counting
-    
+    activity_buffer = [] # shape이 4인 활동량 버퍼
+
     try:
         model_loc = load_model("./loc.pt", n_classes=4, model_type="CNN")
         model_act = load_model("./act.pt", n_classes=4, model_type="CNN")
@@ -555,28 +556,34 @@ def neural_network_inference_process(inference_queue, storage_queue, labels_dict
                 # MQTT Data save
                 if acq_bool:
                     try:
-                        save_data = np.concatenate([storage_data[i][0] for i in range(mac_cnt)], axis=0)
-                    except IndexError as e:
-                        print(f"[❌] 데이터 병합 중 오류 발생: {e}")
-                        labels_dict["occ"] = "❌ 저장 오류"
-                        return
+                    # ❗ 먼저 None 데이터가 있는지 확인
+                        missing_ports = [i for i in range(mac_cnt) if storage_data[i] is None]
+                        if missing_ports:
+                            print("[✋] 추론을 위한 저장 데이터 부족, 잠시만 기다려주세요.")
+                        else:
+                            save_data = np.concatenate([storage_data[i][0] for i in range(mac_cnt)], axis=0)
 
-                    if save_cnt <= 270 and save_cnt > 10: 
-                            # 10(WAIT CNT) + 260(REAL ACQ COUNT) = 270
-                            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")  # 날짜_시간 (초 단위까지)
-                            os.makedirs("/csi/datasets/mqtt/" +timestamp[4:8], exist_ok=True)
-                            filename = f"/csi/datasets/mqtt/{timestamp[4:8]}/{timestamp}_{save_cnt-10}_mqtt.csv"
-                            np.savetxt(filename, save_data, delimiter=",")
-                            save_cnt += 1
-                            print(f"[📁] {save_cnt-10}개 파일이 저장되었습니다.")
-                            labels_dict["occ"] = f"📁{save_cnt-10} SAVE"
-                    elif save_cnt <= 10:
-                           labels_dict["occ"] = "NOT ACQUSITION"
-                           save_cnt += 1
-                    else:
-                        print(f"[🍀] {filename} 데이터 취득을 종료합니다.") 
-                        labels_dict["occ"] = "🍀🍀DONE!🍀🍀"
-                        exit_flag.value = True 
+                            if save_cnt <= 270 and save_cnt > 10: 
+                                timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                                os.makedirs(f"/csi/datasets/mqtt/{csi_dir}", exist_ok=True)
+                                filename = f"/csi/datasets/mqtt/{csi_dir}/{timestamp}_{save_cnt-10}_mqtt.csv"
+                                np.savetxt(filename, save_data, delimiter=",")
+                                save_cnt += 1
+                                print(f"[📁] {save_cnt-11}개 파일이 저장되었습니다.")
+                                labels_dict["occ"] = f"📁{save_cnt-11} SAVE"
+                            elif save_cnt <= 10:
+                                labels_dict["occ"] = "NOT ACQUSITION"
+                                save_cnt += 1
+                            else:
+                                print(f"[🍀] {filename} 데이터 취득을 종료합니다.") 
+                                labels_dict["occ"] = "🍀🍀DONE!🍀🍀"
+                                exit_flag.value = True
+
+                    except Exception as e:
+                        print(f"[❌] 데이터 저장 중 예외 발생: {e}")
+                        traceback.print_exc()
+                        labels_dict["occ"] = "❌ 저장 오류"
+
 
                 print("==== 추론 직전 각 MAC별 타임스탬프 ====")
                 for i in range(mac_cnt):
@@ -586,7 +593,6 @@ def neural_network_inference_process(inference_queue, storage_queue, labels_dict
                 combined_data = np.stack([inference_data[i] for i in range(mac_cnt)], axis=-1)
                 tensor_data = torch.tensor(combined_data, dtype=torch.float32).unsqueeze(0).to(device)
                 tensor_data = tensor_data.permute(0, 3, 1, 2)
-
                 
                 # 추론 수행
                 with torch.no_grad():
@@ -617,12 +623,39 @@ def neural_network_inference_process(inference_queue, storage_queue, labels_dict
                 #loc_pred = torch.argmax(loc_output, dim=1).item()
                 #act_pred = torch.argmax(act_output, dim=1).item()
                 
-                # 결과 저장
+
+                # 활동량 = 전체 CSI 데이터의 절댓값 평균
+                activity_ratio = np.abs(combined_data).mean() # abs
+                activity_buffer.append(activity_ratio)
+
+                print(f"[🏃] 추론 결과에 따른 활동량 :{activity_ratio:.5f}")
                 current_time = datetime.datetime.now().strftime("%H:%M:%S")
                 labels_dict["time"] = current_time
-                labels_dict["loc"] = loc_classes[loc_result[0].item()]
-                labels_dict["act"] = act_classes[act_result[0].item()]
+
+
+                # 버퍼가 10초 이상일 경우만 평균 계산
+                if len(activity_buffer) > 10:
+                    ten_sec_array = np.stack(activity_buffer[-10:])  # activity_buffer의 10초간 데이터
+                    avg_per_port_10s = ten_sec_array.mean(axis=0)    # 평균
+                    activity_buffer.pop(0) # 오래된 값 제거
+
+                    print(f"[🏃] 10초간 평균 활동량 :{avg_per_port_10s:.5f}")
+
+                    # 일정 임계값 이하의 경우 활동 없음으로 판단
+                    if avg_per_port_10s < 0.03:
+                        labels_dict["loc"] = "EMPTY"
+                        labels_dict["act"] = "EMPTY"
+
+                    # 신경망 추론 결과로부터 클래스 매핑
+                    else:
+                        labels_dict["loc"] = loc_classes[loc_result[0].item()]
+                        labels_dict["act"] = act_classes[act_result[0].item()]
+                else:
+                    # 10초 누적이 안됬을 경우라도 추론 결과는 반영
+                    labels_dict["loc"] = loc_classes[loc_result[0].item()]
+                    labels_dict["act"] = act_classes[act_result[0].item()]
                 
+                # 다음 추론을 위한 초기화
                 for i in range(mac_cnt):
                     inference_data[i] = None
 
@@ -840,7 +873,7 @@ class CSIDataGraphicalWindow(QMainWindow):
 # ======================================================= #
 def main():
     # 명령행 인수 파싱
-    acq_bool = parse_argument()
+    acq_bool = parse_argument()[0]
     
     # 프로세스 리스트
     global PROCESSES
