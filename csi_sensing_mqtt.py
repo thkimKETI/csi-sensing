@@ -641,8 +641,8 @@ def neural_network_inference_process(inference_queue, storage_queue, labels_dict
 
                     print(f"[🏃] 10초간 평균 활동량 :{avg_per_port_10s:.5f}")
 
-                    # 일정 임계값 이하의 경우 활동 없음으로 판단
-                    if avg_per_port_10s < 0.03:
+                    # 일정 임계값 이하의 경우 활동 없음으로 판단 (10초간 모든 값이 0.03 이하의 경우만 Empty)
+                    if np.all(ten_sec_array < 0.03):
                         labels_dict["loc"] = "EMPTY"
                         labels_dict["act"] = "EMPTY"
 
