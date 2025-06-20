@@ -62,13 +62,13 @@ MAC_ADDRESS = ["MAC_ADDRESS_1", "MAC_ADDRESS_2"]
 ### 2. Launch the system
 
 ```bash
-python main.py --inf_sec 3 --model CNN --acquire
+python main.py  --model CNN --acquire --dir 0101
 ```
 
 Arguments:
 - `--model`: Model type (`CNN` or `Transformer`)
 - `--acquire`: If provided, logs CSI data to file
-- `--dir` : Path of logs CSI data `/0101` → `/csi/datasets/mqtt/0101` or TODAY
+- `--dir` : Path of logs CSI data `0101` → `/csi/datasets/mqtt/0101` or `/csi/datasets/mqtt/{TODAY}`
 
 ---
 
