@@ -34,8 +34,7 @@ pip install -r requirements.txt
 
 ## 🔗 Pretrained Weights
 
-📦 Download pretrained models and place them under `csi/weight/esp01_weight/`
-> 📁 If the folders do not exist, please create them manually.
+📦 Download pretrained models and place them under `./`
 
 | Number of Devices | Location Model | Activity Model |
 |-------------------|----------------|----------------|
