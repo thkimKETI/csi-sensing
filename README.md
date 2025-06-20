@@ -66,9 +66,9 @@ python main.py --inf_sec 3 --model CNN --acquire
 ```
 
 Arguments:
-- `--inf_sec`: Inference time window in seconds (default: 3)
 - `--model`: Model type (`CNN` or `Transformer`)
 - `--acquire`: If provided, logs CSI data to file
+- `--dir` : Path of logs CSI data `/0101` → `/csi/datasets/mqtt/0101` or TODAY
 
 ---
 
