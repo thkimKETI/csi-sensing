@@ -608,7 +608,7 @@ def neural_network_inference_process(inference_queue, storage_queue, labels_dict
                     
                     def infer_act():
                         result = model_act(tensor_data)
-                        # result = model_loc(tensor_data[:, :, -60:, :]) # # 1s, 2s condition
+                        # result = model_act(tensor_data[:, :, -60:, :]) # # 1s, 2s condition
                         _, act_result[0] = torch.max(result, 1)
                     
                     # 병렬 추론 실행
