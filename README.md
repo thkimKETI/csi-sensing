@@ -40,15 +40,15 @@ Download pretrained models below. Place them in the root directory (`./`) after 
 
 | ESP Devices | Location Model (2D CNN) | Activity Model (Transformer) |
 |-------------|-------------------------|-------------------------------|
-| 1 Device    | 🔜 Coming Soon          | 🔜 Coming Soon                |
-| 2 Devices   | [📥 Download](https://drive.google.com/file/d/1t1Di4KkHQOpncNmZmSdYPAN-0ZtC8Yqc/view?usp=sharing) | [📥 Download](https://drive.google.com/file/d/1reTq928hYPGpaUEugrAVeZoKxW_10U28/view?usp=sharing) |
+| 1 Device    | [📥 Download](https://drive.google.com/file/d/1-DPTa-9CMdbhfu3GDwL2p36T3q4jzIPi/view?usp=sharing) | [📥 Download](https://drive.google.com/file/d/1OkoV1TwQydeG0R5AZbvKDd3y8CrKsPua/view?usp=sharing) |
+| 2 Devices   | [📥 Download](https://drive.google.com/file/d/1YQeQKdtMYZAnctU5RaQji7DVGoKeZxx_/view?usp=sharing) | [📥 Download](https://drive.google.com/file/d/15rCJSn-3p6Xfni8g_2sw8Hq94O1SqexV/view?usp=sharing) |
 
 ### ✅ SVM Models
 
 | ESP Devices | Location Model (SVM) | Activity Model (SVM) |
 |-------------|----------------------|------------------------|
-| 1 Device    | 🔜 Coming Soon       | 🔜 Coming Soon         |
-| 2 Devices   | 🔜 Coming Soon       | 🔜 Coming Soon         |
+| 1 Device    | [📥 Download](https://drive.google.com/file/d/17jUJa_uPXEo6bkPl4vTXvqy6wvpr1_dN/view?usp=sharing) | [📥 Download](https://drive.google.com/file/d/1SDWjVzpFo63i7JZcJ5ktC4P215xFW6fq/view?usp=sharing)|
+| 2 Devices   | [📥 Download](https://drive.google.com/file/d/1j8yWBLsJ0pFZb19lf0mDa2y-BDXM11ai/view?usp=sharing) | [📥 Download](https://drive.google.com/file/d/1bPLGhz_xzEKq9VXHXnpI1cf5d53NlQTt/view?usp=sharing) |
 
 ---
 
