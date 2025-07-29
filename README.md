@@ -4,7 +4,7 @@ This repository provides a **real-time CSI sensing system** that processes Wi-Fi
 It supports **1 or 2 ESP32-S3 devices** and includes both **SVM** and **deep neural models** (2D CNN, Transformer). CSI data is denoised using a **Butterworth filter**, and visualized via a **PyQt5 GUI** interface.
 
 <div align="center">
-  <img src="./csi_sensing_demo.gif" width="300">
+  <img src="./csi_sensing_demo.gif" width="550">
 </div>
 
 ---
