@@ -34,15 +34,21 @@ pip install -r requirements.txt
 
 ## 📦 Pretrained Weights
 
-Download pretrained models and place them in the root directory (`./`):
+Download pretrained models below. Place them in the root directory (`./`) after downloading:
 
-| ESP Devices | Location Model | Activity Model |
-|-------------|----------------|----------------|
-| 1 Device    | Coming Soon    | Coming Soon    |
-| 2 Devices   | [✅ Download](https://drive.google.com/file/d/1t1Di4KkHQOpncNmZmSdYPAN-0ZtC8Yqc/view?usp=sharing) | [✅ Download](https://drive.google.com/file/d/1reTq928hYPGpaUEugrAVeZoKxW_10U28/view?usp=sharing) |
+### ✅ Neural Network Models
 
-> 🔬 Current models are trained using CSI from **2 ESP32-S3 devices** (input shape: `(1, 2, 180, 114)`).  
-> ⏳ Models for single-ESP configurations will be released soon.
+| ESP Devices | Location Model (2D CNN) | Activity Model (Transformer) |
+|-------------|-------------------------|-------------------------------|
+| 1 Device    | 🔜 Coming Soon          | 🔜 Coming Soon                |
+| 2 Devices   | [📥 Download](https://drive.google.com/file/d/1t1Di4KkHQOpncNmZmSdYPAN-0ZtC8Yqc/view?usp=sharing) | [📥 Download](https://drive.google.com/file/d/1reTq928hYPGpaUEugrAVeZoKxW_10U28/view?usp=sharing) |
+
+### ✅ SVM Models
+
+| ESP Devices | Location Model (SVM) | Activity Model (SVM) |
+|-------------|----------------------|------------------------|
+| 1 Device    | 🔜 Coming Soon       | 🔜 Coming Soon         |
+| 2 Devices   | 🔜 Coming Soon       | 🔜 Coming Soon         |
 
 ---
 
@@ -65,49 +71,22 @@ Each script assumes **real-time inference (batch = 1)** and supports **both acti
 #### ✅ Single ESP Device (`1D` Configuration)
 
 ```bash
-# Neural model (2D CNN or Transformer)
+# Neural model (2D CNN for localization, Transformer for action recognition)
 python 1D_csi_sensing_nn.py
 
 # Classical SVM model
 python 1D_csi_sensing_svm.py
 ```
-> 📌 CSI input shape: `(1, 1, 180, 114)` — single ESP32-S3 device  
-> 🧠 Internally uses **2D CNN** for location and **Transformer** for action recognition
 
 #### ✅ Two ESP Devices (`2D` Configuration)
 
 ```bash
-# Neural model (2D CNN or Transformer)
+# Neural model (2D CNN for localization, Transformer for action recognition)
 python 2D_csi_sensing_nn.py
 
 # Classical SVM model
 python 2D_csi_sensing_svm.py
 ```
-> 📌 CSI input shape: `(1, 2, 180, 114)` — stacked from 2 ESP32-S3 devices  
-> 🧠 Internally uses the same model types (2D CNN or Transformer) depending on task
-
----
-
-## 📐 Input Shape Summary
-
-| Script | ESP Devices | Input Shape       | Description                       |
-|--------|-------------|-------------------|-----------------------------------|
-| `1D_csi_sensing_*.py` | 1         | `(1, 1, 180, 114)` | Single ESP (1 channel)            |
-| `2D_csi_sensing_*.py` | 2         | `(1, 2, 180, 114)` | Multi-ESP (stacked by device)     |
-
----
-
-## 🧠 Model Architecture Summary
-
-| Script Name             | ESP Count | Tasks Supported        | Model Types Used          |
-|------------------------|-----------|-------------------------|---------------------------|
-| `1D_csi_sensing_nn.py` | 1         | Action / Location       | Transformer / 2D CNN      |
-| `1D_csi_sensing_svm.py`| 1         | Action / Location       | SVM                       |
-| `2D_csi_sensing_nn.py` | 2         | Action / Location       | Transformer / 2D CNN      |
-| `2D_csi_sensing_svm.py`| 2         | Action / Location       | SVM                       |
-
-> 🧩 The difference between 1D and 2D sensing is **not in network structure**, but in the number of ESPs and the depth of input tensor.
-
 ---
 
 ## 📄 Publications
