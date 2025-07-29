@@ -143,6 +143,4 @@ Use of this code — including academic research, model training, product integr
 
 ## 🙏 Acknowledgments
 
-This research was supported by the Technology Innovation Program  
-**[20026230] Development of AIoT device utilizing Channel State Information (CSI) for AI-based lifestyle recognition**,  
-funded by the **Ministry of Trade, Industry & Energy (MOTIE)** and the **Korea Evaluation Institute of Industrial Technology (KEIT)**.
+This research was supported by the Technology Innovation Program **[20026230] Development of AIoT device utilizing Channel State Information (CSI) for AI-based lifestyle recognition**, funded by the **Ministry of Trade, Industry & Energy (MOTIE)** and the **Korea Evaluation Institute of Industrial Technology (KEIT)**.
