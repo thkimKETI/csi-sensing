@@ -56,8 +56,20 @@ Download pretrained models below. Place them in the root directory (`./`) after 
 
 ### 1. Set up MQTT
 
-Edit the MQTT config in `mqtt_config.py`:
-```python
+#### ✅ For 1D sensing (single ESP)
+
+```bash
+# Edit mqtt_config_1D.py 
+BROKER_ADDRESS = "localhost"
+PORT = 1883
+TOPIC = "csi/data"
+MAC_ADDRESS = ["MAC_1"]
+```
+
+#### ✅ Two ESP Devices (`2D` Configuration)
+
+```bash
+# Edit mqtt_config_2D.py 
 BROKER_ADDRESS = "localhost"
 PORT = 1883
 TOPIC = "csi/data"
